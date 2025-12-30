@@ -1,14 +1,17 @@
 import { useShoppingCart, getWeekId } from '@/contexts/ShoppingCartContext';
-import { ShoppingCart as CartIcon, Trash2, X, Check, DollarSign, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ShoppingCart as CartIcon, Trash2, X, Check, DollarSign, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Printer, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { addWeeks, subWeeks, startOfWeek, format, getYear, getISOWeek, setISOWeek, setYear, addDays } from 'date-fns';
 
 export default function ShoppingCart() {
-    const { cartItems, removeFromCart, toggleChecked, clearCart, clearWeek, updateQuantity, updatePrice, getAllWeeks, getWeeklyTotal, loading } = useShoppingCart();
+    const { cartItems, removeFromCart, toggleChecked, clearCart, clearWeek, updateQuantity, updatePrice, updateNote, addToCart, getAllWeeks, getWeeklyTotal, loading } = useShoppingCart();
     const [selectedWeek, setSelectedWeek] = useState<string | 'all'>(getWeekId(new Date()));
     const [viewDate, setViewDate] = useState(new Date());
+    const [manualItemName, setManualItemName] = useState('');
+    const [manualItemAmount, setManualItemAmount] = useState('');
+    const [manualItemUnit, setManualItemUnit] = useState('');
 
     const weeksWithItems = getAllWeeks();
 
@@ -25,6 +28,73 @@ export default function ShoppingCart() {
     const goToPreviousWeek = () => handleWeekChange(subWeeks(viewDate, 1));
     const goToNextWeek = () => handleWeekChange(addWeeks(viewDate, 1));
     const goToToday = () => handleWeekChange(new Date());
+
+    const handleAddManualItem = () => {
+        if (!manualItemName.trim() || !manualItemAmount || !manualItemUnit.trim()) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        addToCart({
+            name: manualItemName.trim(),
+            amount: parseFloat(manualItemAmount),
+            unit: manualItemUnit.trim(),
+            weekId: currentWeekId,
+            price: 0
+        });
+
+        // Reset form
+        setManualItemName('');
+        setManualItemAmount('');
+        setManualItemUnit('');
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleShare = async () => {
+        // Generate text list
+        let textCallback = `Shopping List from Niroz's Kitchen:\n\n`;
+
+        // Filter items based on current view
+        const visibleWeeks = selectedWeek === 'all'
+            ? [...new Set([...weeksWithItems, currentWeekId])].sort().reverse()
+            : [selectedWeek];
+
+        let hasItems = false;
+
+        visibleWeeks.forEach(weekId => {
+            const items = cartItems.filter((item: any) => item.weekId === weekId);
+            if (items.length > 0) {
+                hasItems = true;
+                textCallback += `Week ${weekId}:\n`;
+                items.forEach((item: any) => {
+                    textCallback += `- [${item.checked ? 'x' : ' '}] ${item.name} (${item.amount} ${item.unit})\n`;
+                });
+                textCallback += '\n';
+            }
+        });
+
+        if (!hasItems) {
+            alert("Cart is empty, nothing to share.");
+            return;
+        }
+
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'Shopping List',
+                    text: textCallback,
+                });
+            } else {
+                await navigator.clipboard.writeText(textCallback);
+                alert('Shopping list copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    };
 
     const grandTotal = weeksWithItems.reduce((total: number, weekId: string) => total + getWeeklyTotal(weekId), 0);
     const uncheckedCount = cartItems.filter((item: any) => !item.checked).length;
@@ -71,7 +141,7 @@ export default function ShoppingCart() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Shopping Cart</h1>
@@ -87,8 +157,22 @@ export default function ShoppingCart() {
                         </div>
                     )}
                     <button
+                        onClick={handleShare}
+                        className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-semibold border border-transparent hover:border-primary-100 print:hidden"
+                    >
+                        <Share2 size={18} />
+                        Share
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-xl transition-all font-semibold border border-transparent hover:border-gray-200 print:hidden"
+                    >
+                        <Printer size={18} />
+                        Print
+                    </button>
+                    <button
                         onClick={clearCart}
-                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all font-semibold border border-transparent hover:border-red-100"
+                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all font-semibold border border-transparent hover:border-red-100 print:hidden"
                     >
                         <Trash2 size={18} />
                         Clear All
@@ -247,6 +331,42 @@ export default function ShoppingCart() {
                                     </div>
                                 </div>
 
+                                {/* Manual Add Form */}
+                                {selectedWeek === weekId && (
+                                    <div className="bg-gradient-to-br from-primary-50 to-white rounded-[2rem] p-6 border-2 border-dashed border-primary-200 mb-4">
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-primary-700 mb-4">Add Manual Item</h3>
+                                        <div className="flex flex-wrap gap-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Item name"
+                                                value={manualItemName}
+                                                onChange={(e) => setManualItemName(e.target.value)}
+                                                className="flex-1 min-w-[200px] px-4 py-2 rounded-xl border-2 border-primary-200 focus:border-primary-400 focus:ring-0 font-semibold"
+                                            />
+                                            <input
+                                                type="number"
+                                                placeholder="Amount"
+                                                value={manualItemAmount}
+                                                onChange={(e) => setManualItemAmount(e.target.value)}
+                                                className="w-24 px-4 py-2 rounded-xl border-2 border-primary-200 focus:border-primary-400 focus:ring-0 font-semibold"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Unit"
+                                                value={manualItemUnit}
+                                                onChange={(e) => setManualItemUnit(e.target.value)}
+                                                className="w-24 px-4 py-2 rounded-xl border-2 border-primary-200 focus:border-primary-400 focus:ring-0 font-semibold"
+                                            />
+                                            <button
+                                                onClick={handleAddManualItem}
+                                                className="px-6 py-2 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-colors"
+                                            >
+                                                Add Item
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-50 overflow-hidden divide-y divide-gray-50">
                                     {items.map((item: any) => (
                                         <motion.div
@@ -275,7 +395,20 @@ export default function ShoppingCart() {
                                                             {name}
                                                         </span>
                                                     ))}
+                                                    {item.recipeNames.length === 0 && (
+                                                        <span className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-500 rounded-lg font-black uppercase tracking-tighter border border-blue-100">
+                                                            Manual
+                                                        </span>
+                                                    )}
                                                 </div>
+                                                {/* Note Input */}
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add a note..."
+                                                    value={item.note || ''}
+                                                    onChange={(e) => updateNote(item.id, e.target.value)}
+                                                    className="mt-2 w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:border-primary-300 focus:ring-0 text-gray-600 placeholder-gray-400"
+                                                />
                                             </div>
 
                                             <div className="flex items-center gap-3">

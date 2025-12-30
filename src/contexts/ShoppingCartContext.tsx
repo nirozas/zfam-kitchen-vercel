@@ -11,18 +11,20 @@ export interface CartItem {
     checked: boolean;
     weekId: string; // Format: "YYYY-WW" (ISO week number)
     price?: number; // Price for this specific item (user can enter manually)
+    note?: string; // Optional user note
 }
 
 interface ShoppingCartContextType {
     cartItems: CartItem[];
-    addToCart: (item: Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId: string, recipeName: string }) => void;
-    addMultipleToCart: (items: (Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId: string, recipeName: string })[]) => void;
+    addToCart: (item: Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId?: string, recipeName?: string }) => void;
+    addMultipleToCart: (items: (Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId?: string, recipeName?: string })[]) => void;
     removeFromCart: (id: string) => void;
     toggleChecked: (id: string) => void;
     clearCart: () => void;
     clearWeek: (weekId: string) => void;
     updateQuantity: (id: string, amount: number) => void;
     updatePrice: (id: string, price: number) => void;
+    updateNote: (id: string, note: string) => void;
     getWeeklyCart: (weekId: string) => CartItem[];
     getWeeklyTotal: (weekId: string) => number;
     getAllWeeks: () => string[];
@@ -76,6 +78,7 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
                 weekId: item.week_id,
                 checked: item.checked,
                 price: parseFloat(item.price || 0),
+                note: item.note || '',
                 recipeIds: item.recipe_ids || [],
                 recipeNames: item.recipe_names || []
             }));
@@ -92,11 +95,11 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const addToCart = async (item: Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId: string, recipeName: string }) => {
+    const addToCart = async (item: Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId?: string, recipeName?: string }) => {
         await addMultipleToCart([item]);
     };
 
-    const addMultipleToCart = async (newItems: (Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId: string, recipeName: string })[]) => {
+    const addMultipleToCart = async (newItems: (Omit<CartItem, 'id' | 'checked' | 'recipeIds' | 'recipeNames'> & { recipeId?: string, recipeName?: string })[]) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
@@ -114,6 +117,7 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
             weekId: item.week_id,
             checked: item.checked,
             price: parseFloat(item.price || 0),
+            note: item.note || '',
             recipeIds: item.recipe_ids || [],
             recipeNames: item.recipe_names || []
         }));
@@ -135,9 +139,9 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
 
             if (existingInBatch) {
                 existingInBatch.amount += item.amount;
-                if (!existingInBatch.recipe_ids.includes(item.recipeId)) {
+                if (item.recipeId && !existingInBatch.recipe_ids.includes(item.recipeId)) {
                     existingInBatch.recipe_ids.push(item.recipeId);
-                    existingInBatch.recipe_names.push(item.recipeName);
+                    if (item.recipeName) existingInBatch.recipe_names.push(item.recipeName);
                 }
                 continue;
             }
@@ -151,13 +155,13 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
             );
 
             if (existingItem) {
-                const updatedRecipeIds = existingItem.recipeIds.includes(item.recipeId)
-                    ? existingItem.recipeIds
-                    : [...existingItem.recipeIds, item.recipeId];
+                const updatedRecipeIds = item.recipeId && !existingItem.recipeIds.includes(item.recipeId)
+                    ? [...existingItem.recipeIds, item.recipeId]
+                    : existingItem.recipeIds;
 
-                const updatedRecipeNames = existingItem.recipeNames.includes(item.recipeName)
-                    ? existingItem.recipeNames
-                    : [...existingItem.recipeNames, item.recipeName];
+                const updatedRecipeNames = item.recipeName && !existingItem.recipeNames.includes(item.recipeName)
+                    ? [...existingItem.recipeNames, item.recipeName]
+                    : existingItem.recipeNames;
 
                 itemsToUpdate.push({
                     id: existingItem.id,
@@ -168,6 +172,7 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
                     week_id: existingItem.weekId,
                     checked: false,
                     price: existingItem.price || 0,
+                    note: existingItem.note || '',
                     recipe_ids: updatedRecipeIds,
                     recipe_names: updatedRecipeNames
                 });
@@ -180,8 +185,9 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
                     week_id: item.weekId,
                     checked: false,
                     price: item.price || 0,
-                    recipe_ids: [item.recipeId],
-                    recipe_names: [item.recipeName]
+                    note: item.note || '',
+                    recipe_ids: item.recipeId ? [item.recipeId] : [],
+                    recipe_names: item.recipeName ? [item.recipeName] : []
                 });
             }
         }
@@ -247,6 +253,14 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
         if (!error) fetchCart();
     };
 
+    const updateNote = async (id: string, note: string) => {
+        const { error } = await supabase
+            .from('shopping_cart')
+            .update({ note })
+            .eq('id', id);
+        if (!error) fetchCart();
+    };
+
     const getWeeklyCart = (weekId: string): CartItem[] => {
         return cartItems.filter(item => item.weekId === weekId);
     };
@@ -276,6 +290,7 @@ export const ShoppingCartProvider = ({ children }: { children: ReactNode }) => {
                 clearWeek,
                 updateQuantity,
                 updatePrice,
+                updateNote,
                 getWeeklyCart,
                 getWeeklyTotal,
                 getAllWeeks,

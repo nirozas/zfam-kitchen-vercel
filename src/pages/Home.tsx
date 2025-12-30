@@ -65,7 +65,7 @@ const Index = () => {
 
             {/* Categories Section */}
             <section className="py-16 bg-white/50 backdrop-blur-sm border-y border-gray-100">
-                <div className="container mx-auto px-4 max-w-7xl">
+                <div className="container mx-auto px-4 max-w-[1800px]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="font-display text-2xl md:text-3xl font-bold mb-2 text-gray-900">
@@ -93,7 +93,7 @@ const Index = () => {
 
             {/* Featured Recipes */}
             <section className="py-16">
-                <div className="container mx-auto px-4 max-w-7xl">
+                <div className="container mx-auto px-4 max-w-[1800px]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="font-display text-2xl md:text-3xl font-bold mb-2 text-gray-900">
@@ -105,7 +105,7 @@ const Index = () => {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                         {featuredRecipes.map((recipe) => (
                             <RecipeCard key={recipe.id} recipe={recipe} />
                         ))}
@@ -115,7 +115,7 @@ const Index = () => {
 
             {/* Popular Recipes */}
             <section className="py-16 bg-white/50 border-y border-gray-100">
-                <div className="container mx-auto px-4 max-w-7xl">
+                <div className="container mx-auto px-4 max-w-[1800px]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="font-display text-2xl md:text-3xl font-bold mb-2 text-gray-900">
@@ -131,7 +131,7 @@ const Index = () => {
                         </Link>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                         {popularRecipes.map((recipe) => (
                             <RecipeCard key={recipe.id} recipe={recipe} />
                         ))}

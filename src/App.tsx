@@ -9,6 +9,7 @@ import ShoppingCart from './pages/ShoppingCart';
 import ManageCategories from './pages/ManageCategories';
 import CategoryDetail from './pages/CategoryDetail';
 import AdminDashboard from './pages/AdminDashboard';
+import Statistics from './pages/Statistics';
 import { ShoppingCartProvider } from './contexts/ShoppingCartContext';
 import { MealPlannerProvider } from './contexts/MealPlannerContext';
 
@@ -29,6 +30,7 @@ function App() {
                             <Route path="edit/:id" element={<CreateRecipe />} />
                             <Route path="auth" element={<Auth />} />
                             <Route path="admin" element={<AdminDashboard />} />
+                            <Route path="statistics" element={<Statistics />} />
                             <Route path="cart" element={<ShoppingCart />} />
                             <Route path="categories" element={<ManageCategories />} />
                             <Route path="category/:id" element={<CategoryDetail />} />

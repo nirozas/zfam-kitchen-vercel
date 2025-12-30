@@ -139,3 +139,43 @@ export function useCategories() {
 
     return { categories, loading, error };
 }
+
+export function useTopTags(limit: number = 12) {
+    const [tags, setTags] = useState<Array<{ name: string; count: number }>>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchTopTags() {
+            try {
+                const { data, error } = await supabase
+                    .from('recipe_tags')
+                    .select('tags(name)');
+
+                if (error) throw error;
+
+                const counts: Record<string, number> = {};
+                data?.forEach((rt: any) => {
+                    const tagName = rt.tags?.name;
+                    if (tagName) {
+                        counts[tagName] = (counts[tagName] || 0) + 1;
+                    }
+                });
+
+                const sortedTags = Object.entries(counts)
+                    .map(([name, count]) => ({ name, count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, limit);
+
+                setTags(sortedTags);
+            } catch (err) {
+                console.error('Error fetching top tags:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchTopTags();
+    }, [limit]);
+
+    return { tags, loading };
+}

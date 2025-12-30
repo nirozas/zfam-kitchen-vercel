@@ -18,23 +18,35 @@ export default function AdminDashboard() {
     }, []);
 
     const checkAdmin = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            navigate('/auth');
-            return;
-        }
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                navigate('/auth');
+                return;
+            }
 
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
 
-        if (profile?.role !== 'admin') {
-            navigate('/');
-            return;
+            if (error) {
+                console.error('Error fetching profile:', error);
+                alert(`Error checking admin status: ${error.message}. Did you run the migration script?`);
+                return;
+            }
+
+            if (profile?.role !== 'admin') {
+                alert("Access Denied: You are not an admin.");
+                navigate('/');
+                return;
+            }
+            setIsAdmin(true);
+        } catch (err) {
+            console.error('Unexpected error:', err);
+            alert('An unexpected error occurred while checking permissions.');
         }
-        setIsAdmin(true);
     };
 
     const fetchPendingUsers = async () => {

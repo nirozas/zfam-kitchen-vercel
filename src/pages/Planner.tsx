@@ -115,7 +115,7 @@ export default function Planner() {
     }
 
     return (
-        <div className="pb-10 relative w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="pb-10 relative max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Week Navigation Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">

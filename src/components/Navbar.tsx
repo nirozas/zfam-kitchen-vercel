@@ -1,4 +1,4 @@
-import { Search, User, Calendar, LogIn, LogOut, ShoppingCart, ShieldAlert } from 'lucide-react';
+import { Search, User, Calendar, LogIn, LogOut, ShoppingCart, ShieldAlert, TrendingUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -90,6 +90,11 @@ export default function Navbar() {
                         <Link to="/planner" className="flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100">
                             <Calendar size={20} />
                             <span className="font-medium text-sm">My Calendar</span>
+                        </Link>
+
+                        <Link to="/statistics" className="flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100">
+                            <TrendingUp size={20} />
+                            <span className="font-medium text-sm">Statistics</span>
                         </Link>
 
                         {session ? (

@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Minus, Plus, Clock, Flame, ArrowLeft, ShoppingCart, Star, ExternalLink, Play, Trash2, Pencil, Loader2, Check, X, Maximize2, AlertTriangle } from 'lucide-react';
+import { Minus, Plus, Clock, Flame, ArrowLeft, ShoppingCart, Star, ExternalLink, Play, Trash2, Pencil, Loader2, Check, X, Maximize2, AlertTriangle, Printer, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShoppingCart, getCurrentWeekId } from '@/contexts/ShoppingCartContext';
 import { useRecipe } from '@/lib/hooks';
@@ -159,6 +159,27 @@ export default function RecipeDetail() {
 
     const isOwner = currentUserId && recipe?.author_id === currentUserId;
 
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleShare = async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: recipe?.title || 'Recipe',
+                    text: `Check out this recipe for ${recipe?.title}!`,
+                    url: window.location.href,
+                });
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -268,19 +289,36 @@ export default function RecipeDetail() {
                         <ArrowLeft size={24} />
                     </Link>
 
-                    <div className="absolute top-6 right-6 flex gap-3">
-                        <Link to={`/edit/${recipe.id}`} className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white">
-                            <Pencil size={18} />
-                            Edit
-                        </Link>
-                        {isOwner && (
-                            <button
-                                onClick={() => setShowDeleteConfirm(true)}
-                                className="bg-red-500/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-red-500/40 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
-                            >
-                                <Trash2 size={18} />
-                                Delete
-                            </button>
+                    <div className="absolute top-6 right-6 flex gap-3 print:hidden">
+                        <button
+                            onClick={handleShare}
+                            className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
+                        >
+                            <Share2 size={18} />
+                            Share
+                        </button>
+                        <button
+                            onClick={handlePrint}
+                            className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
+                        >
+                            <Printer size={18} />
+                            Print
+                        </button>
+
+                        {(isOwner || false) && ( // Assuming Admin might have rights too later, but strict owner for now
+                            <>
+                                <Link to={`/edit/${recipe ? recipe.id : ''}`} className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white">
+                                    <Pencil size={18} />
+                                    Edit
+                                </Link>
+                                <button
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="bg-red-500/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-red-500/40 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
+                                >
+                                    <Trash2 size={18} />
+                                    Delete
+                                </button>
+                            </>
                         )}
                     </div>
 
@@ -356,7 +394,7 @@ export default function RecipeDetail() {
                 </div>
             </div>
 
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
                 {/* Image Gallery Section */}
                 {recipe.gallery_urls && recipe.gallery_urls.length > 0 && (
@@ -594,6 +632,6 @@ export default function RecipeDetail() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
