@@ -35,7 +35,7 @@ export default function Navbar() {
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-3">
-                        <img src="/src/assets/logo.png" alt="Zoabi Family Kitchen" className="h-12 w-12 object-contain drop-shadow-sm" />
+                        <img src="/logo.png" alt="Zoabi Family Kitchen" className="h-12 w-12 object-contain drop-shadow-sm" />
                         <span className="font-bold text-xl tracking-tight text-gray-900 hidden sm:block font-serif">
                             Zoabi Family Kitchen
                         </span>
