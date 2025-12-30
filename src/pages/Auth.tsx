@@ -28,12 +28,27 @@ export default function Auth() {
                 if (error) throw error;
                 alert('Check your email for the confirmation link!');
             } else {
-                const { error } = await supabase.auth.signInWithPassword({
+                const { data: { user }, error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
                 if (error) throw error;
-                navigate('/');
+
+                if (user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('is_approved')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profile && !profile.is_approved) {
+                        await supabase.auth.signOut();
+                        alert('Your account is pending admin approval. Please try again later.');
+                        return;
+                    }
+
+                    navigate('/');
+                }
             }
         } catch (error) {
             alert((error as Error).message);

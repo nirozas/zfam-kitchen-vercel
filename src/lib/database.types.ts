@@ -15,18 +15,24 @@ export interface Database {
                     username: string | null
                     avatar_url: string | null
                     updated_at: string | null
+                    is_approved: boolean
+                    role: 'user' | 'admin'
                 }
                 Insert: {
                     id: string
                     username?: string | null
                     avatar_url?: string | null
                     updated_at?: string | null
+                    is_approved?: boolean
+                    role?: 'user' | 'admin'
                 }
                 Update: {
                     id?: string
                     username?: string | null
                     avatar_url?: string | null
                     updated_at?: string | null
+                    is_approved?: boolean
+                    role?: 'user' | 'admin'
                 }
             }
             categories: {

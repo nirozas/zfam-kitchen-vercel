@@ -1,4 +1,4 @@
-import { Search, User, Calendar, ChefHat, LogIn, LogOut, ShoppingCart } from 'lucide-react';
+import { Search, User, Calendar, LogIn, LogOut, ShoppingCart, ShieldAlert } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -34,12 +34,10 @@ export default function Navbar() {
             <div className="w-full px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="bg-primary-500 p-2 rounded-xl text-white">
-                            <ChefHat size={24} />
-                        </div>
-                        <span className="font-bold text-xl tracking-tight text-gray-900 hidden sm:block">
-                            Z.Fam-recipes
+                    <Link to="/" className="flex items-center gap-3">
+                        <img src="/src/assets/logo.png" alt="Zoabi Family Kitchen" className="h-12 w-12 object-contain drop-shadow-sm" />
+                        <span className="font-bold text-xl tracking-tight text-gray-900 hidden sm:block font-serif">
+                            Zoabi Family Kitchen
                         </span>
                     </Link>
 
@@ -104,6 +102,15 @@ export default function Navbar() {
                                         {session.user.user_metadata.username || 'Profile'}
                                     </span>
                                 </button>
+
+                                <Link
+                                    to="/admin"
+                                    className="p-2 text-gray-400 hover:text-primary-600 transition-colors hidden sm:block"
+                                    title="Admin Dashboard"
+                                >
+                                    <ShieldAlert size={20} />
+                                </Link>
+
                                 <button
                                     onClick={handleSignOut}
                                     className="p-2 text-gray-400 hover:text-red-500 transition-colors"
