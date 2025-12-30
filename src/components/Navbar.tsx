@@ -39,7 +39,7 @@ export default function Navbar() {
                             <ChefHat size={24} />
                         </div>
                         <span className="font-bold text-xl tracking-tight text-gray-900 hidden sm:block">
-                            Niroz's Kitchen
+                            Z.Fam-recipes
                         </span>
                     </Link>
 
