@@ -1,7 +1,7 @@
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useRecipes, useCategories, useTopTags, useRecipeStats } from '@/lib/hooks';
 import RecipeCard from '@/components/RecipeCard';
-import { ArrowLeft, Frown, ChefHat, Plus, Hash, SortAsc, SortDesc, Search } from 'lucide-react';
+import { ArrowLeft, Frown, ChefHat, Plus, SortAsc, SortDesc, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 
