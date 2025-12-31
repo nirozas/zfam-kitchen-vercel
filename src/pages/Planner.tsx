@@ -11,7 +11,11 @@ import { Link } from 'react-router-dom';
 export default function Planner() {
     const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, -1 = last week, +1 = next week
     const { addMultipleToCart } = useShoppingCart();
+<<<<<<< HEAD
     const { plannedMeals, dailyNotes, addRecipeToDate, addCustomMealToDate, removeRecipeFromDate, saveDailyNote } = useMealPlanner();
+=======
+    const { plannedMeals, addRecipeToDate, addCustomMealToDate, removeRecipeFromDate } = useMealPlanner();
+>>>>>>> 74eac4e67b2e2bf59a1c6949a574bf67269fc1fa
     const { recipes, loading, error } = useRecipes();
 
     const today = new Date();
@@ -254,6 +258,7 @@ export default function Planner() {
                                         )}
                                     </div>
 
+<<<<<<< HEAD
 
                                     <div className="mt-4 pt-4 border-t border-gray-100">
                                         <textarea
@@ -267,6 +272,11 @@ export default function Planner() {
                                     <button
                                         onClick={() => openSearch(dateStr)}
                                         className="mt-4 w-full py-3 flex items-center justify-center text-primary-400 hover:text-primary-600 hover:bg-primary-50 rounded-2xl transition-all border-2 border-dashed border-gray-100 hover:border-primary-200 bg-gray-50/50"
+=======
+                                    <button
+                                        onClick={() => openSearch(dateStr)}
+                                        className="mt-6 w-full py-3 flex items-center justify-center text-primary-400 hover:text-primary-600 hover:bg-primary-50 rounded-2xl transition-all border-2 border-dashed border-gray-100 hover:border-primary-200 bg-gray-50/50"
+>>>>>>> 74eac4e67b2e2bf59a1c6949a574bf67269fc1fa
                                     >
                                         <Plus size={24} strokeWidth={3} />
                                     </button>
