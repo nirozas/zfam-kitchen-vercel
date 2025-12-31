@@ -1,8 +1,9 @@
 import { Recipe } from '@/lib/types';
-import { Clock, Flame, Star, ShoppingCart } from 'lucide-react';
+import { Clock, Flame, Star, ShoppingCart, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useShoppingCart, getCurrentWeekId } from '@/contexts/ShoppingCartContext';
+import { useFavorites, useLikes, useRecipeLikes } from '@/lib/hooks';
 
 interface RecipeCardProps {
     recipe: Recipe;
@@ -10,9 +11,28 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe }: RecipeCardProps) {
     const { cartItems, addToCart } = useShoppingCart();
+    const { favorites, toggleFavorite } = useFavorites();
+    const { likes, toggleLike } = useLikes();
+    const { count: likesCount, fetchCount: fetchLikesCount } = useRecipeLikes(recipe.id);
 
     // Check if any items from this recipe are in the cart
     const isInCart = cartItems.some(item => item.recipeIds.includes(recipe.id));
+
+    const isFavorited = favorites.includes(recipe.id);
+    const isLiked = likes.includes(recipe.id);
+
+    const handleToggleFavorite = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFavorite(recipe.id);
+    };
+
+    const handleToggleLike = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await toggleLike(recipe.id);
+        fetchLikesCount();
+    };
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -57,24 +77,53 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                         </span>
                     </div>
 
-                    {/* Cart Button */}
-                    <button
-                        onClick={handleAddToCart}
-                        className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-sm border ${isInCart
-                            ? 'bg-green-500 text-white border-green-400'
-                            : 'bg-white/90 text-gray-600 border-gray-100 hover:bg-white hover:text-primary-600'
-                            }`}
-                        title={isInCart ? "Already in cart" : "Add all ingredients to cart"}
-                    >
-                        <ShoppingCart size={18} />
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-2">
+                        <button
+                            onClick={handleToggleLike}
+                            className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-sm border ${isLiked
+                                ? 'bg-rose-500 text-white border-rose-400'
+                                : 'bg-white/90 text-gray-400 border-gray-100 hover:bg-white hover:text-rose-500'
+                                }`}
+                            title={isLiked ? "Unlike" : "Like"}
+                        >
+                            <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                            onClick={handleToggleFavorite}
+                            className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-sm border ${isFavorited
+                                    ? 'bg-amber-500 text-white border-amber-400'
+                                    : 'bg-white/90 text-gray-400 border-gray-100 hover:bg-white hover:text-amber-500'
+                                }`}
+                            title={isFavorited ? "Remove from favorites" : "Favorite this recipe"}
+                        >
+                            <Star size={16} fill={isFavorited ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                            onClick={handleAddToCart}
+                            className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-sm border ${isInCart
+                                ? 'bg-green-500 text-white border-green-400'
+                                : 'bg-white/90 text-gray-600 border-gray-100 hover:bg-white hover:text-primary-600'
+                                }`}
+                            title={isInCart ? "Already in cart" : "Add all ingredients to cart"}
+                        >
+                            <ShoppingCart size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1 text-yellow-500">
-                            <Star size={14} fill="currentColor" />
-                            <span className="text-sm font-bold text-gray-700">{recipe.rating || 0}</span>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1 text-yellow-500">
+                                <Star size={14} fill="currentColor" />
+                                <span className="text-sm font-bold text-gray-700">{recipe.rating || 0}</span>
+                            </div>
+                            <div className="w-px h-3 bg-gray-200" />
+                            <div className="flex items-center gap-1 text-rose-500">
+                                <Heart size={14} fill="currentColor" />
+                                <span className="text-sm font-bold text-gray-700">{likesCount}</span>
+                            </div>
                         </div>
                         <div className="text-xs text-gray-400">
                             by {recipe.author?.username || 'Chef'}

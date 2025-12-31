@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { Pencil, Trash2, Plus, X, Upload, Loader2, Image as ImageIcon, ExternalLink, ChefHat } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Upload, Loader2, Image as ImageIcon, ExternalLink, ChefHat, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Category {
@@ -9,6 +9,7 @@ interface Category {
     name: string;
     slug: string;
     image_url: string | null;
+    order_index: number;
     created_at: string | null;
 }
 
@@ -52,7 +53,7 @@ export default function ManageCategories() {
             const { data, error } = await supabase
                 .from('categories')
                 .select('*')
-                .order('name');
+                .order('order_index', { ascending: true });
 
             if (error) throw error;
             setCategories(data || []);
@@ -110,6 +111,38 @@ export default function ManageCategories() {
         }
     };
 
+    const moveCategory = async (index: number, direction: 'up' | 'down') => {
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= categories.length) return;
+
+        const updatedCategories = [...categories];
+        const temp = updatedCategories[index];
+        updatedCategories[index] = updatedCategories[newIndex];
+        updatedCategories[newIndex] = temp;
+
+        // Update indices locally first for immediate feedback
+        setCategories(updatedCategories);
+
+        try {
+            // Update order_index in database for both categories
+            const updates = [
+                { id: updatedCategories[index].id, order_index: index },
+                { id: updatedCategories[newIndex].id, order_index: newIndex }
+            ];
+
+            for (const update of updates) {
+                const { error } = await supabase
+                    .from('categories')
+                    .update({ order_index: update.order_index })
+                    .eq('id', update.id);
+                if (error) throw error;
+            }
+        } catch (error) {
+            console.error('Error updating order:', error);
+            fetchCategories(); // Re-sync if failed
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -144,7 +177,7 @@ export default function ManageCategories() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="group relative bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col"
                         >
-                            <Link to={`/category/${category.id}`} className="block flex-1">
+                            <Link to={`/category/${category.slug}`} className="block flex-1">
                                 {/* Image Container */}
                                 <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
                                     {category.image_url ? (
@@ -160,11 +193,26 @@ export default function ManageCategories() {
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                                    {/* Quick Labels */}
-                                    <div className="absolute top-4 left-4">
-                                        <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest text-gray-900 rounded-full shadow-sm">
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                                        <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest text-gray-900 rounded-full shadow-sm w-fit">
                                             Collection
                                         </span>
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveCategory(categories.indexOf(category), 'up'); }}
+                                                disabled={categories.indexOf(category) === 0}
+                                                className="p-1.5 bg-white/90 backdrop-blur-sm rounded-lg text-gray-900 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed shadow-sm border border-gray-100"
+                                            >
+                                                <ChevronUp size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveCategory(categories.indexOf(category), 'down'); }}
+                                                disabled={categories.indexOf(category) === categories.length - 1}
+                                                className="p-1.5 bg-white/90 backdrop-blur-sm rounded-lg text-gray-900 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed shadow-sm border border-gray-100"
+                                            >
+                                                <ChevronDown size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 

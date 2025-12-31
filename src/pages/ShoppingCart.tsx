@@ -144,24 +144,24 @@ export default function ShoppingCart() {
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Shopping Cart</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Shopping List</h1>
                     <p className="text-gray-500 mt-1 font-medium">
-                        {uncheckedCount} {uncheckedCount === 1 ? 'item' : 'items'} remaining
+                        {uncheckedCount} {uncheckedCount === 1 ? 'item' : 'items'} to buy
                     </p>
                 </div>
                 <div className="flex items-center gap-6">
                     {grandTotal > 0 && (
                         <div className="text-right">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Grand Total</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Amount</p>
                             <p className="text-2xl font-black text-primary-600 leading-none">${grandTotal.toFixed(2)}</p>
                         </div>
                     )}
                     <button
                         onClick={handleShare}
-                        className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-semibold border border-transparent hover:border-primary-100 print:hidden"
+                        className="flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all font-bold border border-transparent hover:border-primary-100 print:hidden text-sm"
                     >
-                        <Share2 size={18} />
-                        Share
+                        <Share2 size={16} />
+                        Share List
                     </button>
                     <button
                         onClick={handlePrint}
@@ -172,9 +172,9 @@ export default function ShoppingCart() {
                     </button>
                     <button
                         onClick={clearCart}
-                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all font-semibold border border-transparent hover:border-red-100 print:hidden"
+                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold border border-transparent hover:border-red-100 print:hidden text-sm"
                     >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                         Clear All
                     </button>
                 </div>
@@ -185,17 +185,17 @@ export default function ShoppingCart() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setSelectedWeek('all')}
-                        className={`px-6 py-2 rounded-xl font-bold transition-all ${selectedWeek === 'all'
+                        className={`px-5 py-2 rounded-xl font-bold transition-all text-sm ${selectedWeek === 'all'
                             ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
                             : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100 shadow-sm'
                             }`}
                     >
-                        History View
+                        Full History
                     </button>
                     {selectedWeek === 'all' && (
                         <button
                             onClick={() => setSelectedWeek(currentWeekId)}
-                            className="px-6 py-2 rounded-xl font-bold transition-all bg-white text-gray-400 hover:text-primary-600 border border-gray-100 shadow-sm"
+                            className="px-5 py-2 rounded-xl font-bold transition-all bg-white text-gray-400 hover:text-primary-600 border border-gray-100 shadow-sm text-sm"
                         >
                             Focus Week
                         </button>
@@ -314,7 +314,7 @@ export default function ShoppingCart() {
                                     <div className="flex items-center gap-4">
                                         {weekTotal > 0 && (
                                             <div className="px-4 py-2 bg-primary-50 rounded-xl border border-primary-100">
-                                                <span className="text-[10px] font-black uppercase tracking-tighter text-primary-600 block leading-none mb-1">Estimated Total</span>
+                                                <span className="text-[10px] font-black uppercase tracking-tighter text-primary-600 block leading-none mb-1">Estimated</span>
                                                 <div className="flex items-center gap-1 text-primary-900">
                                                     <DollarSign size={16} strokeWidth={3} />
                                                     <span className="text-lg font-black leading-none">{weekTotal.toFixed(2)}</span>
@@ -335,15 +335,15 @@ export default function ShoppingCart() {
                                 {selectedWeek === weekId && (
                                     <div className="bg-gradient-to-br from-primary-50 to-white rounded-[1.5rem] p-4 border-2 border-dashed border-primary-200 mb-3 md:max-w-lg">
                                         <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-[10px] font-black uppercase tracking-wider text-primary-700">Add Manual Item</h3>
+                                            <h3 className="text-[10px] font-black uppercase tracking-wider text-primary-700">Quick Add</h3>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             <input
                                                 type="text"
-                                                placeholder="Item name"
+                                                placeholder="What do you need?"
                                                 value={manualItemName}
                                                 onChange={(e) => setManualItemName(e.target.value)}
-                                                className="flex-1 min-w-[150px] px-3 py-1.5 rounded-xl border border-primary-100 focus:border-primary-400 focus:ring-0 font-bold text-xs"
+                                                className="flex-1 min-w-[150px] px-4 py-2 rounded-xl border border-primary-100 focus:border-primary-400 focus:ring-0 font-medium text-sm bg-white"
                                             />
                                             <input
                                                 type="number"
@@ -387,8 +387,8 @@ export default function ShoppingCart() {
                                                 {item.checked && <Check size={16} className="text-white" strokeWidth={4} />}
                                             </button>
 
-                                            <div className="flex-1 min-w-0">
-                                                <p className={`text-sm font-bold truncate ${item.checked ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                                            <div className="flex-1 min-w-0 py-1">
+                                                <p className={`text-sm md:text-base font-medium leading-relaxed ${item.checked ? 'line-through text-gray-400' : 'text-gray-900'}`}>
                                                     {item.name}
                                                 </p>
                                                 <div className="flex flex-wrap gap-1 mt-0.5">

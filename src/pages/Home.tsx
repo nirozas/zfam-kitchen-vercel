@@ -167,7 +167,7 @@ const Index = () => {
                                 Start Your Culinary Journey
                             </h2>
                             <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-                                Save your favorite recipes, plan your meals, and cook delicious food every day.
+                                Favorite recipes, plan your meals, and cook delicious food every day.
                             </p>
                             <Link
                                 to="/create"

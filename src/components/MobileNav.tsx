@@ -13,18 +13,27 @@ export default function MobileNav() {
                     <Home size={24} />
                     <span className="text-[10px] font-medium">Home</span>
                 </Link>
-                <button className="flex flex-col items-center gap-1 text-gray-400">
+                <Link
+                    to="/search"
+                    className={clsx("flex flex-col items-center gap-1 transition-colors", isActive('/search') ? "text-primary-600" : "text-gray-400 hover:text-gray-600")}
+                >
                     <Search size={24} />
-                    <span className="text-[10px] font-medium">Search</span>
-                </button>
-                <Link to="/planner" className={clsx("flex flex-col items-center gap-1", isActive('/planner') ? "text-primary-600" : "text-gray-400")}>
-                    <Calendar size={24} />
-                    <span className="text-[10px] font-medium">Calendar</span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">Search</span>
                 </Link>
-                <button className="flex flex-col items-center gap-1 text-gray-400">
+                <Link
+                    to="/planner"
+                    className={clsx("flex flex-col items-center gap-1 transition-colors", isActive('/planner') ? "text-primary-600" : "text-gray-400 hover:text-gray-600")}
+                >
+                    <Calendar size={24} />
+                    <span className="text-[10px] font-black uppercase tracking-tighter">Planner</span>
+                </Link>
+                <Link
+                    to="/profile"
+                    className={clsx("flex flex-col items-center gap-1 transition-colors", isActive('/profile') ? "text-primary-600" : "text-gray-400 hover:text-gray-600")}
+                >
                     <User size={24} />
-                    <span className="text-[10px] font-medium">Profile</span>
-                </button>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">Profile</span>
+                </Link>
             </div>
         </div>
     );

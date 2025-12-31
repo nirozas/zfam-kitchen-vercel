@@ -1,15 +1,18 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Minus, Plus, Clock, Flame, ArrowLeft, ShoppingCart, Star, ExternalLink, Play, Trash2, Pencil, Loader2, Check, X, Maximize2, AlertTriangle, Printer, Share2 } from 'lucide-react';
+import { Minus, Plus, Clock, Flame, ArrowLeft, ShoppingCart, Star, ExternalLink, Play, Trash2, Pencil, Loader2, Check, X, Maximize2, AlertTriangle, Printer, Share2, MessageSquare, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShoppingCart, getCurrentWeekId } from '@/contexts/ShoppingCartContext';
-import { useRecipe } from '@/lib/hooks';
+import { useRecipe, useFavorites, useReviews, useLikes, useRecipeLikes } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
 
 export default function RecipeDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { recipe, loading } = useRecipe(id);
+    const { reviews, fetchReviews } = useReviews(id);
+    const { likes, toggleLike } = useLikes();
+    const { count: likesCount, fetchCount: fetchLikesCount } = useRecipeLikes(id);
     const [multiplier, setMultiplier] = useState(1);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -17,8 +20,11 @@ export default function RecipeDetail() {
     const [crossedIngredients, setCrossedIngredients] = useState<number[]>([]);
     const [crossedSteps, setCrossedSteps] = useState<number[]>([]);
     const [selectedForCart, setSelectedForCart] = useState<number[]>([]);
-    const [userRating, setUserRating] = useState<number | null>(null);
+    const [userRating, setUserRating] = useState<number | null>(0);
+    const [reviewComment, setReviewComment] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
     const { addToCart } = useShoppingCart();
+    const { favorites, toggleFavorite } = useFavorites();
     const [addingToCart, setAddingToCart] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -40,18 +46,44 @@ export default function RecipeDetail() {
         checkUser();
     }, []);
 
-    const handleRate = async (rating: number) => {
-        if (!id) return;
+    const handleSubmitReview = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!id || !currentUserId || userRating === 0) return;
+        setSubmittingReview(true);
         try {
             const { error } = await supabase
-                .from('recipes')
-                .update({ rating })
-                .eq('id', id);
+                .from('reviews')
+                .upsert({
+                    user_id: currentUserId,
+                    recipe_id: id,
+                    rating: userRating,
+                    comment: reviewComment
+                }, { onConflict: 'user_id,recipe_id' });
 
             if (error) throw error;
-            setUserRating(rating);
+
+            // Also update the average rating in recipes table for performance/sorting
+            const { data: allReviews } = await supabase
+                .from('reviews')
+                .select('rating')
+                .eq('recipe_id', id);
+
+            if (allReviews && allReviews.length > 0) {
+                const avg = allReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / allReviews.length;
+                await supabase
+                    .from('recipes')
+                    .update({ rating: Math.round(avg * 10) / 10 })
+                    .eq('id', id);
+            }
+
+            setReviewComment('');
+            fetchReviews();
+            alert('Review submitted! Thank you.');
         } catch (error) {
-            console.error('Error updating rating:', error);
+            console.error('Error submitting review:', error);
+            alert('Failed to submit review.');
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -159,9 +191,6 @@ export default function RecipeDetail() {
 
     const isOwner = currentUserId && recipe?.author_id === currentUserId;
 
-    const handlePrint = () => {
-        window.print();
-    };
 
     const handleShare = async () => {
         try {
@@ -271,7 +300,7 @@ export default function RecipeDetail() {
             </AnimatePresence>
 
             {/* Hero Section */}
-            <div className="relative h-[60vh] w-full overflow-hidden">
+            <div className="relative h-[40vh] md:h-[60vh] w-full overflow-hidden">
                 {recipe.image_url ? (
                     <img
                         src={recipe.image_url}
@@ -285,55 +314,22 @@ export default function RecipeDetail() {
                     </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 sm:p-10">
-                    <Link to="/" className="absolute top-6 left-6 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-colors">
+                    <Link to="/" className="absolute top-6 left-6 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-colors z-10">
                         <ArrowLeft size={24} />
                     </Link>
-
-                    <div className="absolute top-6 right-6 flex gap-3 print:hidden">
-                        <button
-                            onClick={handleShare}
-                            className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
-                        >
-                            <Share2 size={18} />
-                            Share
-                        </button>
-                        <button
-                            onClick={handlePrint}
-                            className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
-                        >
-                            <Printer size={18} />
-                            Print
-                        </button>
-
-                        {(isOwner || false) && ( // Assuming Admin might have rights too later, but strict owner for now
-                            <>
-                                <Link to={`/edit/${recipe ? recipe.id : ''}`} className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition-colors text-sm font-semibold flex items-center gap-2 text-white">
-                                    <Pencil size={18} />
-                                    Edit
-                                </Link>
-                                <button
-                                    onClick={() => setShowDeleteConfirm(true)}
-                                    className="bg-red-500/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-red-500/40 transition-colors text-sm font-semibold flex items-center gap-2 text-white"
-                                >
-                                    <Trash2 size={18} />
-                                    Delete
-                                </button>
-                            </>
-                        )}
-                    </div>
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="max-w-4xl"
+                        className="max-w-4xl relative z-10"
                     >
-                        <div className="flex items-center gap-4 mb-4">
+                        <div className="flex flex-wrap items-center gap-4 mb-4">
                             <span className="px-4 py-1.5 bg-primary-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full">
                                 {recipe.category?.name || 'Uncategorized'}
                             </span>
                         </div>
 
-                        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-4 shadow-sm tracking-tighter leading-[0.9]">
+                        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-2 shadow-sm tracking-tighter leading-[0.9]">
                             {recipe.title}
                         </h1>
                         <p className="text-white/80 text-xl font-medium line-clamp-2 mb-8 max-w-2xl leading-relaxed">
@@ -347,7 +343,7 @@ export default function RecipeDetail() {
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button
                                         key={star}
-                                        onClick={(e) => { e.stopPropagation(); handleRate(star); }}
+                                        onClick={(e) => { e.stopPropagation(); setUserRating(star); }}
                                         className="transition-transform hover:scale-125 focus:outline-none"
                                     >
                                         <Star
@@ -375,8 +371,15 @@ export default function RecipeDetail() {
                                 </div>
                             )}
                         </div>
+                    </motion.div>
 
-                        <div className="flex items-center gap-8 text-white font-black uppercase tracking-widest text-[10px] flex-wrap mt-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="flex items-end justify-between gap-8 text-white font-black uppercase tracking-widest text-[10px] flex-wrap mt-10 w-full relative z-10"
+                    >
+                        <div className="flex items-center gap-8 flex-wrap">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white/10 rounded-xl"><Clock size={16} /></div>
                                 <span>{recipe.time_minutes} min total</span>
@@ -389,6 +392,68 @@ export default function RecipeDetail() {
                                 <div className="p-2 bg-white/10 rounded-xl"><span className="text-sm">👥</span></div>
                                 <span>{(recipe.servings || 1) * multiplier} servings</span>
                             </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 print:hidden mb-1">
+                            <button
+                                onClick={handleShare}
+                                className="bg-white/20 backdrop-blur-sm p-2 sm:px-3 sm:py-1.5 rounded-xl hover:bg-white/30 transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white border border-white/10 shadow-sm"
+                                title="Share"
+                            >
+                                <Share2 size={14} />
+                                <span className="hidden sm:inline">Share</span>
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    await toggleLike(recipe?.id || '');
+                                    fetchLikesCount();
+                                }}
+                                className={`backdrop-blur-sm p-2 sm:px-3 sm:py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border border-white/10 ${likes.includes(recipe?.id || '')
+                                    ? 'bg-rose-500 text-white border-rose-400'
+                                    : 'bg-white/10 text-white hover:bg-white/20'
+                                    }`}
+                            >
+                                <Heart size={14} fill={likes.includes(recipe?.id || '') ? "currentColor" : "none"} />
+                                <span className="hidden sm:inline">Like</span>
+                                <span className="bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{likesCount}</span>
+                            </button>
+                            <button
+                                onClick={() => toggleFavorite(recipe?.id || '')}
+                                className={`backdrop-blur-sm p-2 sm:px-3 sm:py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border border-white/10 ${favorites.includes(recipe?.id || '')
+                                    ? 'bg-amber-500 text-white border-amber-400'
+                                    : 'bg-white/10 text-white hover:bg-white/20'
+                                    }`}
+                            >
+                                <Star size={14} fill={favorites.includes(recipe?.id || '') ? "currentColor" : "none"} />
+                                <span className="hidden sm:inline">Favorite</span>
+                            </button>
+                            <button
+                                onClick={() => window.print()}
+                                className="bg-white/20 backdrop-blur-sm p-2 sm:px-3 sm:py-1.5 rounded-xl hover:bg-white/30 transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white border border-white/10 shadow-sm"
+                                title="Print"
+                            >
+                                <Printer size={14} />
+                                <span className="hidden sm:inline">Print</span>
+                            </button>
+                            {(isOwner || false) && (
+                                <>
+                                    <Link
+                                        to={`/edit/${recipe ? recipe.id : ''}`}
+                                        className="bg-white/20 backdrop-blur-sm p-2 sm:px-3 sm:py-1.5 rounded-xl hover:bg-white/30 transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white border border-white/10 shadow-sm"
+                                    >
+                                        <Pencil size={14} />
+                                        <span className="hidden sm:inline">Edit</span>
+                                    </Link>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="bg-red-500/20 backdrop-blur-sm p-2 sm:px-3 sm:py-1.5 rounded-xl hover:bg-red-500/40 transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white border border-white/10 shadow-sm"
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={14} />
+                                        <span className="hidden sm:inline">Delete</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 </div>
@@ -612,6 +677,109 @@ export default function RecipeDetail() {
                                         </div>
                                     );
                                 })}
+                            </div>
+                        </section>
+
+                        {/* Reviews Section */}
+                        <section id="reviews" className="bg-white p-8 sm:p-14 rounded-[3.5rem] shadow-xl shadow-gray-100/50 border border-gray-100">
+                            <div className="flex items-center justify-between mb-12">
+                                <div className="flex items-center gap-5">
+                                    <div className="w-14 h-14 rounded-[1.5rem] bg-amber-50 flex items-center justify-center text-3xl shadow-inner">⭐</div>
+                                    <div>
+                                        <h2 className="text-4xl font-black text-gray-900 tracking-tighter">Family Reviews</h2>
+                                        <p className="text-gray-500 font-medium">What the kitchen crew thinks.</p>
+                                    </div>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <MessageSquare size={16} className="text-primary-500" />
+                                    <span className="text-xs font-black text-gray-900">{reviews.length}</span>
+                                </div>
+                            </div>
+
+                            {/* Review Form */}
+                            {currentUserId && (
+                                <form onSubmit={handleSubmitReview} className="mb-16 bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-100">
+                                    <h3 className="text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">Write a Review</h3>
+
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Your Rating:</span>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <button
+                                                        key={star}
+                                                        type="button"
+                                                        onClick={() => setUserRating(star)}
+                                                        className="transition-transform hover:scale-125"
+                                                    >
+                                                        <Star
+                                                            size={24}
+                                                            className={`${star <= (userRating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <textarea
+                                                value={reviewComment}
+                                                onChange={(e) => setReviewComment(e.target.value)}
+                                                placeholder="Share your thoughts on this recipe..."
+                                                className="w-full h-32 p-6 bg-white border-2 border-gray-100 rounded-2xl focus:border-primary-500 focus:outline-none font-medium transition-all resize-none"
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={submittingReview || userRating === 0}
+                                            className="self-end px-10 py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary-600 transition-all shadow-xl disabled:opacity-50"
+                                        >
+                                            {submittingReview ? <Loader2 className="animate-spin inline-block mr-2" /> : null}
+                                            Submit Review
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {/* Reviews List */}
+                            <div className="space-y-8">
+                                {reviews.length > 0 ? (
+                                    reviews.map((review) => (
+                                        <div key={review.id} className="group relative">
+                                            <div className="flex items-start gap-6 border-b border-gray-100 pb-8 last:border-0">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 font-black text-xl">
+                                                    {review.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-black text-gray-900">{review.profiles?.username || 'Family Member'}</span>
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                            {new Date(review.created_at).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex gap-0.5 mb-3">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Star
+                                                                key={star}
+                                                                size={12}
+                                                                className={`${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-gray-600 font-medium leading-relaxed">
+                                                        {review.comment}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-20 bg-gray-50/50 rounded-[2.5rem] border border-dashed border-gray-200">
+                                        <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
+                                        <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">No reviews yet. Be the first!</p>
+                                    </div>
+                                )}
                             </div>
                         </section>
 

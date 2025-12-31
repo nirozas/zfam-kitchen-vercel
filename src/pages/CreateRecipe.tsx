@@ -56,6 +56,8 @@ export default function CreateRecipe() {
   const [showBulkSteps, setShowBulkSteps] = useState(false);
   const [bulkIngredientsText, setBulkIngredientsText] = useState('');
   const [bulkStepsText, setBulkStepsText] = useState('');
+  const [showBulkNutrition, setShowBulkNutrition] = useState(false);
+  const [bulkNutritionText, setBulkNutritionText] = useState('');
   const [ingredients, setIngredients] = useState([{ name: '', amount: '', unit: 'g' }]);
 
   const ingredientRefs = useRef<Array<HTMLInputElement | null>>([]);
@@ -374,6 +376,27 @@ export default function CreateRecipe() {
     setIngredients([...ingredients.filter(i => i.name !== ''), ...newIngredients]);
     setBulkIngredientsText('');
     setShowBulkAdd(false);
+  };
+
+  const parseBulkNutrition = () => {
+    const lines = bulkNutritionText.split('\n');
+    const newNutrition = { ...formData.nutrition };
+
+    lines.forEach(line => {
+      const lower = line.toLowerCase();
+      const match = line.match(/(\d+)/);
+      if (!match) return;
+      const val = match[1];
+
+      if (lower.includes('cal')) newNutrition.calories = val;
+      else if (lower.includes('prot')) newNutrition.protein = val;
+      else if (lower.includes('fat')) newNutrition.fat = val;
+      else if (lower.includes('carb')) newNutrition.carbs = val;
+    });
+
+    setFormData(prev => ({ ...prev, nutrition: newNutrition }));
+    setBulkNutritionText('');
+    setShowBulkNutrition(false);
   };
 
   const createNewCategory = async () => {
@@ -788,9 +811,38 @@ export default function CreateRecipe() {
             {/* Section 6: Nutrition Facts */}
             <section className="bg-white p-6 sm:p-8 rounded-[2.5rem] shadow-xl shadow-gray-100 border border-gray-100 space-y-6">
               <div className="flex items-center justify-between border-b border-gray-50 pb-6">
-                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Nutrition Facts</h3>
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">per serving</span>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Nutrition Facts</h3>
+                </div>
+                <div className="flex gap-4 items-center">
+                  <button type="button" onClick={() => setShowBulkNutrition(!showBulkNutrition)} className="text-gray-400 font-black text-[10px] uppercase tracking-widest hover:text-primary-600">Bulk</button>
+                  <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">per serving</span>
+                </div>
               </div>
+
+              <AnimatePresence>
+                {showBulkNutrition && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 space-y-4 overflow-hidden"
+                  >
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Nutrition Details (One per line)</label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-5 py-4 rounded-2xl border-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-mono"
+                      placeholder="Calories: 350&#10;Protein: 20g&#10;Fat: 12g&#10;Carbs: 45g"
+                      value={bulkNutritionText}
+                      onChange={e => setBulkNutritionText(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-3">
+                      <button type="button" onClick={() => setShowBulkNutrition(false)} className="px-4 py-2 text-xs font-bold text-gray-400">Cancel</button>
+                      <button type="button" onClick={parseBulkNutrition} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest">Import</button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="grid grid-cols-2 gap-4">
                 {Object.keys(formData.nutrition).map((key) => (
                   <div key={key} className="space-y-2">

@@ -26,7 +26,7 @@ export default function Auth() {
                     },
                 });
                 if (error) throw error;
-                alert('Check your email for the confirmation link!');
+                alert('Account created! Once you verify your email, an admin will need to approve your account before you can sign in.');
             } else {
                 const { data: { user }, error } = await supabase.auth.signInWithPassword({
                     email,
